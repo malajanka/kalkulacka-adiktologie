@@ -253,249 +253,239 @@ def _(MZDY_ODVOZENE, meritko, mo):
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    potreba = mo.ui.slider(
-        start=0,
-        stop=1000,
-        step=50,
-        value=700,
-        show_value=True,
-        label="**Dodatečná potřeba služeb** (mil. Kč ročně)",
-    )
-    mo.vstack(
-        [
-            mo.md(
-                """
-                ## 2 · Mezera mezi penězi a potřebou
-
-                Žadatelé v dotačním řízení každý rok žádají víc, než program rozdělí, a to i přesto,
-                že výzva sama omezuje, o kolik lze žádat (spolufinancování, stropy). Odborníci z oboru
-                odhadují, že k plnému pokrytí služeb chybí **600–800 mil. Kč ročně** navíc.
-                Posuvníkem si nastavíte vlastní předpoklad.
-                """
-            ),
-            potreba,
-        ]
-    )
-    return (potreba,)
-
-
-@app.cell(hide_code=True)
-def _(AMBER, CYAN, POZADAVKY, PROGRAM, SILVER, alt, kc, pd, potreba):
-    _rows = [
-        ("2024 · přiděleno", PROGRAM[2024], "přiděleno"),
-        ("2024 · požadováno", POZADAVKY[2024], "požadováno"),
-        ("2025 · přiděleno", PROGRAM[2025], "přiděleno"),
-        ("2025 · požadováno", POZADAVKY[2025], "požadováno"),
-        ("2027 · v návrhu SR", PROGRAM[2027], "přiděleno"),
-        ("2027 · odhad potřeby", PROGRAM[2027] + potreba.value, "potřeba"),
-    ]
-    _df = pd.DataFrame(_rows, columns=["položka", "mil", "typ"])
-    _df["popis"] = _df["mil"].map(lambda v: f"{kc(v, 1 if v % 1 else 0)} mil. Kč")
-    _barvy = alt.Scale(domain=["přiděleno", "požadováno", "potřeba"], range=[CYAN, "#B9C4C4", AMBER])
-    _base = alt.Chart(_df).encode(
-        y=alt.Y("položka:N", sort=None, title=None, axis=alt.Axis(labelFontSize=13, labelLimit=220)),
-        x=alt.X("mil:Q", title="mil. Kč", scale=alt.Scale(domain=[0, 1500]),
-                axis=alt.Axis(grid=True, gridColor="#e6e6e6",
-                              labelExpr="replace(format(datum.value, ','), ',', ' ')")),
-    )
-    graf_mezera = (
-        (
-            _base.mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4, height=26).encode(
-                color=alt.Color("typ:N", scale=_barvy, title=None,
-                                legend=alt.Legend(orient="top", labelFontSize=13, labelLimit=0)),
-                tooltip=[alt.Tooltip("položka:N", title="Položka"), alt.Tooltip("popis:N", title="Částka")],
-            )
-            + _base.mark_text(align="left", dx=6, fontSize=12, color="#222").encode(text="popis:N")
-        )
-        .properties(height=280, width="container",
-                    title=alt.Title("Přiděleno, požadováno, potřebné",
-                                    subtitle="Požadavky žadatelů 2024 a 2025 podle výročních zpráv RVKPZ",
-                                    anchor="start", fontSize=15, subtitleFontSize=12))
-        .configure_view(strokeWidth=0)
-        .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
-    )
-    graf_mezera
-    return
-
-
-@app.cell(hide_code=True)
-def _(POZADAVKY, PROGRAM, kc, mo, potreba):
-    _nepokryto_24 = POZADAVKY[2024] - PROGRAM[2024]
-    _nepokryto_25 = POZADAVKY[2025] - PROGRAM[2025]
-    mo.md(
-        f"""
-        V roce 2024 zůstalo bez krytí **{kc(_nepokryto_24, 1)} mil. Kč** požadavků
-        ({kc(_nepokryto_24 / POZADAVKY[2024] * 100)} %), v roce 2025 **{kc(_nepokryto_25, 1)} mil. Kč**
-        ({kc(_nepokryto_25 / POZADAVKY[2025] * 100)} %).
-        Při dodatečné potřebě {kc(potreba.value)} mil. Kč by program musel mít
-        **{kc(PROGRAM[2027] + potreba.value)} mil. Kč**, tedy
-        {kc((PROGRAM[2027] + potreba.value) / PROGRAM[2027], 1)}× víc než v návrhu.
-        """
-    )
-    return
-
-
-@app.cell(hide_code=True)
 def _():
-    # Priority a výchozí varianty – inspirace: GD „Podklady k debatě o rozpočtu na politiku
-    # závislostí 2025“ (srpen 2024). Částky v mil. Kč. Neuvedené položky = 0.
-    PRIORITY = {
-        "sluzby": ("Adiktologické služby a kapacity",
-                   "personál a dostupnost ve všech krajích, nové ambulance a centra"),
-        "substituce": ("Substituční léčba",
-                       "včetně nových programů pro lidi užívající pervitin"),
-        "hr": ("Prevence a harm reduction",
-               "injekční sety, testování infekcí, naloxon, osvěta pro rizikové skupiny"),
-        "digital": ("Digitální závislosti a hazard",
-                    "specializovaná centra a ambulantní péče"),
-        "alkohol": ("Alkohol a tabák",
-                    "ambulance v krajských městech, lidé s komorbiditami"),
-        "zranitelni": ("Zranitelné skupiny",
-                       "matky s dětmi, stárnoucí uživatelé, chráněné bydlení a zaměstnávání"),
-        "valorizace": ("Valorizace mezd a nákladů",
-                       "inflace, mzdy, energie"),
+    # Skutečné rozdělení programu v roce 2025 podle typu služby, mil. Kč
+    # (VZ RVKPZ 2025, tab. 7-1 + 7-2, součet obou výzev; zaokrouhleno na celé mil.)
+    SIT = {
+        "prevence": ("Preventivní služby", 31, 44),
+        "hr": ("Minimalizace rizik (harm reduction)", 153, 208),
+        "ambulance": ("Ambulantní léčba a poradenství", 124, 167),
+        "rezidencni": ("Rezidenční léčba", 44, 53),
+        "nasledna": ("Následná péče", 26, 37),
+        "ivh": ("Informační, výzkumné a síťovací projekty", 37, 47),
     }
-    VARIANTY = {
-        "Minimalistická": {"sluzby": 250, "substituce": 30, "hr": 60, "digital": 0,
-                           "alkohol": 0, "zranitelni": 0, "valorizace": 69},
-        "Kompromisní": {"sluzby": 200, "substituce": 40, "hr": 80, "digital": 40,
-                        "alkohol": 0, "zranitelni": 0, "valorizace": 69},
-        "Ideální": {"sluzby": 450, "substituce": 100, "hr": 250, "digital": 120,
-                    "alkohol": 200, "zranitelni": 150, "valorizace": 100},
+    # (klíč: název, skutečnost 2025 dotace, požadavek žadatelů 2025)
+
+    # Priority rozvoje z výzvy MZd na rok 2027 (čl. 3, dotační oblast I), schválené
+    # usnesením vlády č. 609/2026 – platí „v případě, že objem alokovaných prostředků
+    # umožní rozvoj sítě“
+    ROZVOJ = {
+        "kapacity": ("Rozšíření ambulancí a substituční léčby",
+                     "nové úvazky v přímé péči (min. +1,0 úvazku na službu)"),
+        "testovani": ("Testování na infekční nemoci",
+                      "HIV, HCV, syfilis u lidí, kteří užívají drogy rizikově"),
+        "inovace_hr": ("Inovativní harm reduction",
+                       "naloxon, bezpečná aplikace, nízkoprahová psychiatrická péče"),
+        "prevence_rozvoj": ("Indikovaná a selektivní prevence",
+                            "rozvoj preventivních služeb pro ohrožené skupiny"),
+        "digital": ("Digitální závislosti",
+                    "nové programy léčby a poradenství"),
+        "stabilizace": ("Krátkodobá krizová stabilizace",
+                        "pilotní lůžka krizové stabilizace pro lidi se závislostí"),
     }
-    # Celkové částky, jak je uvádí podklad (součty položek se od nich liší)
-    VARIANTY_UVEDENO = {"Minimalistická": 415, "Kompromisní": 500, "Ideální": 1100}
-    return PRIORITY, VARIANTY, VARIANTY_UVEDENO
+    return ROZVOJ, SIT
 
 
 @app.cell(hide_code=True)
-def _(VARIANTY, mo):
-    varianta = mo.ui.dropdown(
-        options=list(VARIANTY),
-        value="Kompromisní",
-        label="**Začít od varianty**",
+def _(mo):
+    vychozi = mo.ui.radio(
+        options={"skutečnost 2025 (415 mil.)": "dotace",
+                 "požadavky žadatelů 2025 (556 mil.)": "pozadavky"},
+        value="skutečnost 2025 (415 mil.)",
+        label="**Stávající síť nastavit podle**",
     )
     mo.vstack(
         [
             mo.md(
                 """
-                ## 3 · Na co by peníze šly
+                ## 2 · Na co peníze jdou a co vláda slibuje
 
-                Vyberte výchozí variantu a posuvníky upravte jednotlivé priority.
-                Kalkulačka sečte, kolik by takový program stál, a porovná to s návrhem rozpočtu.
+                Posuvníky v levém sloupci ukazují, jak se program v roce 2025 rozdělil mezi typy služeb.
+                V pravém sloupci jsou priority rozvoje, které vláda schválila do výzvy na rok 2027
+                (usnesení č. 609/2026). Výzva je ovšem podmiňuje tím, že „objem alokovaných finančních
+                prostředků umožní rozvoj sítě“. Při 415 mil. Kč na ně nezbývá nic, proto začínají na nule.
+                Nastavte, kolik by podle vás potřebovaly.
                 """
             ),
-            varianta,
+            vychozi,
         ]
     )
-    return (varianta,)
+    return (vychozi,)
 
 
 @app.cell(hide_code=True)
-def _(PRIORITY, VARIANTY, mo, varianta):
-    _v = VARIANTY[varianta.value]
-    alokace = mo.ui.dictionary(
-        {
-            k: mo.ui.slider(start=0, stop=600, step=10, value=_v[k], show_value=True,
-                            label=PRIORITY[k][0], full_width=True)
-            for k in PRIORITY
-        }
+def _(PROGRAM, ROZVOJ, SIT, kc, mo, udrzeni, vychozi):
+    _i = 1 if vychozi.value == "dotace" else 2
+    sit = mo.ui.dictionary(
+        {k: mo.ui.slider(start=0, stop=300, step=1, value=v[_i], show_value=True,
+                         label=v[0], full_width=True) for k, v in SIT.items()}
+    )
+    rozvoj = mo.ui.dictionary(
+        {k: mo.ui.slider(start=0, stop=200, step=5, value=0, show_value=True,
+                         label=v[0], full_width=True) for k, v in ROZVOJ.items()}
+    )
+    _valorizace_2027 = max(0.0, udrzeni[2027] - PROGRAM[2027])
+    valorizace = mo.ui.checkbox(
+        value=True,
+        label=f"Přičíst valorizaci stávající sítě na rok 2027 (+{kc(_valorizace_2027)} mil. Kč podle části 1)",
     )
     mo.vstack(
         [
-            mo.vstack([alokace[k], mo.md(f"<small>{PRIORITY[k][1]}</small>")], gap=0)
-            for k in PRIORITY
+            mo.hstack(
+                [
+                    mo.vstack([mo.md("**Stávající síť** (mil. Kč)")] + [sit[k] for k in SIT], gap=0.6),
+                    mo.vstack(
+                        [mo.md("**Rozvoj slíbený ve výzvě 2027** (mil. Kč)")]
+                        + [mo.vstack([rozvoj[k], mo.md(f"<small>{ROZVOJ[k][1]}</small>")], gap=0)
+                           for k in ROZVOJ],
+                        gap=0.6,
+                    ),
+                ],
+                widths="equal", gap=2, wrap=True, align="start",
+            ),
+            valorizace,
         ],
-        gap=0.75,
+        gap=1,
     )
-    return (alokace,)
+    return rozvoj, sit, valorizace
 
 
 @app.cell(hide_code=True)
 def _(
+    AMBER,
     CYAN,
+    POZADAVKY,
     PRIJMY_2027,
-    PRIORITY,
     PROGRAM,
     PURPLE,
-    VARIANTY,
-    VARIANTY_UVEDENO,
-    alokace,
+    ROZVOJ,
+    SIT,
     alt,
     kc,
     mo,
     pd,
+    rozvoj,
+    sit,
     udrzeni,
-    varianta,
+    valorizace,
 ):
-    _hodnoty = alokace.value
-    _celkem = sum(_hodnoty.values())
-    _vychozi = VARIANTY[varianta.value]
+    _val = max(0.0, udrzeni[2027] - PROGRAM[2027]) if valorizace.value else 0.0
+    _sit_sum = sum(sit.value.values())
+    _rozvoj_sum = sum(rozvoj.value.values())
+    navrh_celkem = _sit_sum + _rozvoj_sum + _val
     _prijmy = sum(PRIJMY_2027.values()) * 1000
-    _vase = "Vaše rozdělení"
-    _vych = f"Varianta {varianta.value.lower()}"
-    _df = pd.DataFrame(
-        [{"priorita": PRIORITY[k][0], "řada": _vase, "mil": _hodnoty[k],
-          "popis": f"{kc(_hodnoty[k])} mil. Kč"} for k in PRIORITY]
-        + [{"priorita": PRIORITY[k][0], "řada": _vych, "mil": _vychozi[k],
-            "popis": f"{kc(_vychozi[k])} mil. Kč"} for k in PRIORITY]
-    )
-    _poradi = [PRIORITY[k][0] for k in PRIORITY]
-    _barvy = alt.Scale(domain=[_vase, _vych], range=[CYAN, PURPLE])
+
+    # Graf 1: rozdělení podle položek
+    _S, _R, _T = "Stávající síť", "Rozvoj slíbený ve výzvě 2027", "Skutečnost 2025"
+    _rows = [{"položka": SIT[k][0], "řada": _S, "mil": sit.value[k]} for k in SIT]
+    _rows += [{"položka": ROZVOJ[k][0], "řada": _R, "mil": rozvoj.value[k]} for k in ROZVOJ]
+    if _val:
+        _rows.append({"položka": "Valorizace mezd a nákladů", "řada": _S, "mil": round(_val)})
+    _ticks = [{"položka": SIT[k][0], "řada": _T, "mil": SIT[k][1]} for k in SIT]
+    _df = pd.DataFrame(_rows + _ticks)
+    _df["popis"] = _df["mil"].map(lambda v: f"{kc(v)} mil. Kč")
+    _poradi = [SIT[k][0] for k in SIT] + (["Valorizace mezd a nákladů"] if _val else []) + [ROZVOJ[k][0] for k in ROZVOJ]
+    _barvy = alt.Scale(domain=[_S, _R, _T], range=[CYAN, AMBER, PURPLE])
     _base = alt.Chart(_df).encode(
-        y=alt.Y("priorita:N", sort=_poradi, title=None,
-                axis=alt.Axis(labelFontSize=13, labelLimit=260)),
-        x=alt.X("mil:Q", title="mil. Kč", scale=alt.Scale(domain=[0, 600]),
+        y=alt.Y("položka:N", sort=_poradi, title=None, axis=alt.Axis(labelFontSize=12, labelLimit=280)),
+        x=alt.X("mil:Q", title="mil. Kč", scale=alt.Scale(domain=[0, 300]),
                 axis=alt.Axis(grid=True, gridColor="#e6e6e6")),
         color=alt.Color("řada:N", scale=_barvy, title=None,
                         legend=alt.Legend(orient="top", labelFontSize=13, labelLimit=0)),
-        tooltip=[alt.Tooltip("priorita:N", title="Priorita"), alt.Tooltip("řada:N", title="Řada"),
+        tooltip=[alt.Tooltip("položka:N", title="Položka"), alt.Tooltip("řada:N", title="Řada"),
                  alt.Tooltip("popis:N", title="Částka")],
     )
-    _graf = (
+    _graf_polozky = (
         (
-            _base.transform_filter(alt.datum["řada"] == _vase).mark_bar(
-                cornerRadiusTopRight=4, cornerRadiusBottomRight=4, height=24)
-            + _base.transform_filter(alt.datum["řada"] == _vych).mark_tick(
-                thickness=3, size=34, opacity=1)
+            _base.transform_filter(alt.datum["řada"] != _T).mark_bar(
+                cornerRadiusTopRight=4, cornerRadiusBottomRight=4, height=18)
+            + _base.transform_filter(alt.datum["řada"] == _T).mark_tick(thickness=3, size=26, opacity=1)
         )
-        .properties(height=320, width="container",
-                    title=alt.Title("Rozdělení podle priorit",
-                                    subtitle="Sloupec = vaše nastavení, svislá čárka = výchozí varianta",
+        .properties(height=440, width="container",
+                    title=alt.Title("Váš návrh podle položek",
+                                    subtitle="Svislá čárka = skutečné rozdělení v roce 2025",
                                     anchor="start", fontSize=15, subtitleFontSize=12))
         .configure_view(strokeWidth=0)
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
-    _rozdil = _celkem - PROGRAM[2027]
-    _soucet_var = sum(_vychozi.values())
+
+    # Graf 2: přiděleno, požadováno, váš návrh
+    _rows2 = [
+        ("2024 · přiděleno", PROGRAM[2024], "přiděleno"),
+        ("2024 · požadováno", POZADAVKY[2024], "požadováno"),
+        ("2025 · přiděleno", PROGRAM[2025], "přiděleno"),
+        ("2025 · požadováno", POZADAVKY[2025], "požadováno"),
+        ("2027 · návrh SR", PROGRAM[2027], "přiděleno"),
+        ("2027 · váš návrh", round(navrh_celkem, 1), "váš návrh"),
+    ]
+    _df2 = pd.DataFrame(_rows2, columns=["položka", "mil", "typ"])
+    _df2["popis"] = _df2["mil"].map(lambda v: f"{kc(v, 1 if v % 1 else 0)} mil. Kč")
+    _barvy2 = alt.Scale(domain=["přiděleno", "požadováno", "váš návrh"], range=[CYAN, "#B9C4C4", AMBER])
+    _xmax = max(1500, navrh_celkem * 1.15)
+    _base2 = alt.Chart(_df2).encode(
+        y=alt.Y("položka:N", sort=None, title=None, axis=alt.Axis(labelFontSize=13, labelLimit=220)),
+        x=alt.X("mil:Q", title="mil. Kč", scale=alt.Scale(domain=[0, _xmax]),
+                axis=alt.Axis(grid=True, gridColor="#e6e6e6",
+                              labelExpr="replace(format(datum.value, ','), ',', ' ')")),
+    )
+    _graf_celkem = (
+        (
+            _base2.mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4, height=26).encode(
+                color=alt.Color("typ:N", scale=_barvy2, title=None,
+                                legend=alt.Legend(orient="top", labelFontSize=13, labelLimit=0)),
+                tooltip=[alt.Tooltip("položka:N", title="Položka"), alt.Tooltip("popis:N", title="Částka")],
+            )
+            + _base2.mark_text(align="left", dx=6, fontSize=12, color="#222").encode(text="popis:N")
+        )
+        .properties(height=280, width="container",
+                    title=alt.Title("Přiděleno, požadováno a váš návrh",
+                                    subtitle="Požadavky žadatelů podle výročních zpráv RVKPZ 2024 a 2025",
+                                    anchor="start", fontSize=15, subtitleFontSize=12))
+        .configure_view(strokeWidth=0)
+        .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
+    )
+
+    _rozdil = navrh_celkem - PROGRAM[2027]
     mo.vstack(
         [
-            _graf,
+            _graf_polozky,
             mo.hstack(
                 [
-                    mo.stat(value=f"{kc(_celkem)} mil.", label="Program podle vašich priorit",
-                            caption=f"{kc(_celkem / _prijmy * 100, 2)} % příjmů z návykových produktů",
+                    mo.stat(value=f"{kc(navrh_celkem)} mil.", label="Váš návrh programu na rok 2027",
+                            caption=f"síť {kc(_sit_sum)} + rozvoj {kc(_rozvoj_sum)} + valorizace {kc(_val)}",
                             bordered=True),
                     mo.stat(value=f"{'+' if _rozdil >= 0 else '−'}{kc(abs(_rozdil))} mil.",
                             label="Proti návrhu SR 2027 (415 mil.)",
-                            caption=f"návrh pokryje {kc(min(PROGRAM[2027] / _celkem, 1) * 100 if _celkem else 100)} % vašeho rozdělení",
+                            caption=f"{kc(navrh_celkem / PROGRAM[2027], 2)}× částka v návrhu",
                             bordered=True),
-                    mo.stat(value=f"{kc(udrzeni[2027])} mil.",
-                            label="Jen udržení úrovně 2025 v roce 2027",
-                            caption="podle přepočtu v části 1",
+                    mo.stat(value=f"{kc(navrh_celkem / _prijmy * 100, 2)} %",
+                            label="Podíl na příjmech z návykových produktů",
+                            caption="návrh SR 2027: 0,44 %",
                             bordered=True),
                 ],
                 widths="equal", gap=1, wrap=True,
             ),
+            _graf_celkem,
             mo.md(
-                f"<small>Výchozí varianty vycházejí z podkladu k debatě o rozpočtu na politiku závislostí 2025 (srpen 2024). "
-                f"Varianta {varianta.value.lower()} je v podkladu uvedena za {kc(VARIANTY_UVEDENO[varianta.value])} mil. Kč, "
-                f"součet jejích položek je {kc(_soucet_var)} mil. Kč.</small>"
+                f"""
+                V roce 2025 žadatelé požadovali **{kc(POZADAVKY[2025], 1)} mil. Kč**, tedy o
+                {kc(POZADAVKY[2025] - PROGRAM[2025], 1)} mil. víc, než program rozdělil, a to i přesto,
+                že výzva sama omezuje, o kolik lze žádat. Odborníci z oboru odhadují, že k plnému
+                pokrytí služeb chybí 600–800 mil. Kč ročně, tedy program kolem 1,0–1,2 mld. Kč.
+                """
+            ),
+            mo.callout(
+                mo.md(
+                    "<small>**Co zaznělo v médiích:** premiér v srpnu 2026 navýšení prostředků na protidrogovou "
+                    "politiku přislíbil, bez konkrétní částky. Po jednání vlády 21. 9. 2026 ČTK uvedla, že "
+                    "„dalších 85 milionů korun poputuje na podporu prevence“. V návrhu státního rozpočtu "
+                    "ani ve výzvě MZd na rok 2027 se tato částka zatím nepropsala.</small>"
+                ),
+                kind="neutral",
             ),
         ]
     )
-    return
+    return (navrh_celkem,)
 
 
 @app.cell(hide_code=True)
@@ -514,7 +504,7 @@ def _(PRIJMY_2027, PROGRAM, mo):
         [
             mo.md(
                 """
-                ## 4 · Peníze, které stát z návykových produktů vybírá
+                ## 3 · Peníze, které stát z návykových produktů vybírá
 
                 Stát v roce 2027 podle návrhu rozpočtu vybere na spotřebních daních z tabáku, alkoholu
                 a kratomu a na dani z hazardu přibližně **94 mld. Kč**. Jakou část by si zasloužily
@@ -606,6 +596,11 @@ def _(mo):
                   (objem mezd a platů minus zaměstnanost).
                 - **Příjmy z návykových produktů 2027:** Zpráva k návrhu SR 2027 (E_01) a SDV (K_01);
                   daň z hazardu jen podíl státního rozpočtu (bez 4,6 mld. pro obce).
+                - **Rozdělení podle typu služby 2025:** VZ RVKPZ 2025, kap. 7, tab. 7-1 a 7-2 (dotace a požadavky,
+                  součet obou výzev, zaokrouhleno na celé mil. Kč).
+                - **Priority rozvoje 2027:** Výzva MZd k dotačnímu řízení Protidrogová politika na rok 2027, čl. 3,
+                  dotační oblast I; oblasti a priority schválila vláda usnesením č. 609 ze dne 21. 9. 2026.
+                  Alokace výzvy je podle čl. 4 „předmětem jednání“.
                 - **Veřejné výdaje na služby 2024:** Souhrnná zpráva o závislostech v ČR 2025 (NMS), kap. 2.9.
                 - **Dodatečná potřeba 600–800 mil. Kč:** odhad Jindřicha Vobořila (Zdravotnický deník,
                   30. 7. 2026), převzatý i ČTK (21. 9. 2026); metodika odhadu není zveřejněná.
