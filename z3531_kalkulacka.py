@@ -88,7 +88,7 @@ def _():
 def _(mo):
     mo.md(
         """
-        # Kolik má adiktologie v rozpočtu doopravdy
+        # Program Z3531 v návrhu rozpočtu 2027
 
         Program protidrogové politiky (**Z3531**, od roku 2027 v kapitole MZd) má v návrhu
         státního rozpočtu na rok 2027 i ve střednědobém výhledu **415 mil. Kč na každý rok
@@ -122,7 +122,7 @@ def _(mo):
     )
     mo.vstack(
         [
-            mo.md("## 1 · Stejná částka, menší hodnota"),
+            mo.md("## 1 · Reálná hodnota 2024–2029"),
             mo.hstack([meritko, odchylka], justify="start", gap=3, wrap=True),
         ]
     )
@@ -188,6 +188,7 @@ def _(CYAN, PROGRAM, PURPLE, alt, kc, meritko, pd, realne):
                         subtitle=f"Reálná hodnota přepočtená podle růstu {'cen' if meritko.value == 'ceny' else 'mezd'}, základ 2025",
                         anchor="start", fontSize=15, subtitleFontSize=12))
         .configure_view(strokeWidth=0)
+        .configure(font="PT Sans")
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
     graf_realne
@@ -298,7 +299,7 @@ def _(mo):
         [
             mo.md(
                 """
-                ## 2 · Na co peníze jdou a co vláda slibuje
+                ## 2 · Rozdělení podle služeb a priority 2027
 
                 Posuvníky v levém sloupci ukazují, jak se program v roce 2025 rozdělil mezi typy služeb.
                 V pravém sloupci jsou priority rozvoje, které vláda schválila do výzvy na rok 2027
@@ -406,6 +407,7 @@ def _(
                                     subtitle="Svislá čárka = skutečné rozdělení v roce 2025",
                                     anchor="start", fontSize=15, subtitleFontSize=12))
         .configure_view(strokeWidth=0)
+        .configure(font="PT Sans")
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
 
@@ -442,6 +444,7 @@ def _(
                                     subtitle="Požadavky žadatelů podle výročních zpráv RVKPZ 2024 a 2025",
                                     anchor="start", fontSize=15, subtitleFontSize=12))
         .configure_view(strokeWidth=0)
+        .configure(font="PT Sans")
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
 
@@ -504,7 +507,7 @@ def _(PRIJMY_2027, PROGRAM, mo):
         [
             mo.md(
                 """
-                ## 3 · Peníze, které stát z návykových produktů vybírá
+                ## 3 · Podíl na příjmech z návykových produktů
 
                 Stát v roce 2027 podle návrhu rozpočtu vybere na spotřebních daních z tabáku, alkoholu
                 a kratomu a na dani z hazardu přibližně **94 mld. Kč**. Jakou část by si zasloužily
@@ -565,7 +568,7 @@ def _(PROGRAM, kc, meritko, mo, realne, udrzeni):
     _co = "cen" if meritko.value == "ceny" else "mezd"
     mo.vstack(
         [
-            mo.md("## Věta ke sdílení"),
+            mo.md("## Shrnutí"),
             mo.callout(
                 mo.md(
                     f"Vláda navrhuje dát protidrogovým službám pět let po sobě stejných "
