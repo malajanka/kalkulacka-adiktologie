@@ -188,8 +188,8 @@ def _(CYAN, PROGRAM, PURPLE, alt, kc, meritko, pd, realne):
                         "Dotační program nominálně a reálně",
                         subtitle=f"Reálná hodnota přepočtená podle růstu {'cen' if meritko.value == 'ceny' else 'mezd'}, základ 2025",
                         anchor="start", fontSize=15, subtitleFontSize=12))
-        .configure_view(strokeWidth=0)
         .configure(font="PT Sans")
+        .configure_view(strokeWidth=0)
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
     graf_realne
@@ -407,8 +407,8 @@ def _(
                     title=alt.Title("Váš návrh podle položek",
                                     subtitle="Svislá čárka = skutečné rozdělení v roce 2025",
                                     anchor="start", fontSize=15, subtitleFontSize=12))
-        .configure_view(strokeWidth=0)
         .configure(font="PT Sans")
+        .configure_view(strokeWidth=0)
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
 
@@ -444,8 +444,8 @@ def _(
                     title=alt.Title("Přiděleno, požadováno a váš návrh",
                                     subtitle="Požadavky žadatelů podle výročních zpráv RVKPZ 2024 a 2025",
                                     anchor="start", fontSize=15, subtitleFontSize=12))
-        .configure_view(strokeWidth=0)
         .configure(font="PT Sans")
+        .configure_view(strokeWidth=0)
         .configure_axis(domainColor="#999", labelColor="#333", titleColor="#555")
     )
 
