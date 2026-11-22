@@ -2,18 +2,18 @@
 # requires-python = ">=3.10"
 # dependencies = ["marimo", "altair", "pandas"]
 # ///
-"""RATIO – kalkulačka k programu Z3531 (protidrogová politika), návrh SR 2027.
+"""Kalkulačka financování adiktologických služeb (dotační program Protidrogová politika), návrh SR 2027.
 
-Spuštění jako aplikace (bez kódu):   marimo run z3531_kalkulacka.py
-Úpravy:                              marimo edit z3531_kalkulacka.py
+Spuštění jako aplikace (bez kódu):   marimo run kalkulacka_adiktologie.py
+Úpravy:                              marimo edit kalkulacka_adiktologie.py
 Export do jednoho HTML (běží v prohlížeči):
-    marimo export html-wasm z3531_kalkulacka.py -o web --mode run
+    marimo export html-wasm kalkulacka_adiktologie.py -o web --mode run
 """
 
 import marimo
 
 __generated_with = "0.25.2"
-app = marimo.App(width="medium", app_title="Z3531 – kalkulačka")
+app = marimo.App(width="medium", app_title="Kalkulačka financování adiktologických služeb")
 
 
 @app.cell(hide_code=True)
@@ -88,11 +88,12 @@ def _():
 def _(mo):
     mo.md(
         """
-        # Program Z3531 v návrhu rozpočtu 2027
+        # Kalkulačka financování adiktologických služeb
 
-        Program protidrogové politiky (**Z3531**, od roku 2027 v kapitole MZd) má v návrhu
-        státního rozpočtu na rok 2027 i ve střednědobém výhledu **415 mil. Kč na každý rok
-        2027, 2028 i 2029**. Stejnou částku dostal už v letech 2025 a 2026.
+        Dotační program Protidrogová politika, ze kterého stát financuje adiktologické služby
+        (od roku 2027 pod Ministerstvem zdravotnictví), má v návrhu státního rozpočtu na rok 2027
+        i ve střednědobém výhledu **415 mil. Kč na každý rok 2027, 2028 i 2029**.
+        Stejnou částku dostal už v letech 2025 a 2026.
         Kalkulačka ukazuje, co to znamená v reálných penězích a jak daleko je to od potřeby.
 
         Všechna čísla pocházejí z návrhu SR 2027, střednědobého výhledu a výročních zpráv RVKPZ.
@@ -184,7 +185,7 @@ def _(CYAN, PROGRAM, PURPLE, alt, kc, meritko, pd, realne):
         (_sloupce + _linka + _popisky)
         .properties(height=340, width="container",
                     title=alt.Title(
-                        "Program Z3531 nominálně a reálně",
+                        "Dotační program nominálně a reálně",
                         subtitle=f"Reálná hodnota přepočtená podle růstu {'cen' if meritko.value == 'ceny' else 'mezd'}, základ 2025",
                         anchor="start", fontSize=15, subtitleFontSize=12))
         .configure_view(strokeWidth=0)
@@ -501,7 +502,7 @@ def _(PRIJMY_2027, PROGRAM, mo):
         step=0.05,
         value=round(_soucasny_podil, 2),
         show_value=True,
-        label="**Podíl příjmů z návykových produktů pro program Z3531** (%)",
+        label="**Podíl příjmů z návykových produktů pro dotační program** (%)",
     )
     mo.vstack(
         [
@@ -536,7 +537,7 @@ def _(PROGRAM, VEREJNE_VYDAJE_2024, kc, mo, podil, prijmy_celkem):
                     ),
                     mo.stat(
                         value=f"{kc(_halere_dnes)} haléřů",
-                        label="Ze stokoruny těchto příjmů jde do Z3531",
+                        label="Ze stokoruny těchto příjmů jde na dotační program",
                         caption=f"415 mil. Kč = {kc(PROGRAM[2027] / prijmy_celkem * 100, 2)} %",
                         bordered=True,
                     ),
@@ -590,7 +591,7 @@ def _(mo):
             "Zdroje a metodika": mo.md(
                 """
                 - **Program 2027–2029:** Návrh zákona o SR 2027, H_01 Struktura výdajů podle programového
-                  financování, s. 7 (Z3531, kap. 335 MZd: 415 / 415 / 415 mil. Kč).
+                  financování, s. 7 (kód programu Z3531, kap. 335 MZd: 415 / 415 / 415 mil. Kč).
                 - **Program 2024–2026:** Výroční zprávy RVKPZ 2024 a 2025, kap. 7, tab. 7-1 a 7-2;
                   zákon č. 38/2026 Sb.; seznam schválených dotací MZd 2026. Revidovaný vládní návrh SR 2026
                   počítal s 315 mil. Kč, +100 mil. doplnila Poslanecká sněmovna (březen 2026).
